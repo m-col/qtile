@@ -419,54 +419,62 @@ class Columns(Layout):
             self.cc.shuffle_down()
             self.group.layout_all()
 
-    def cmd_grow_left(self):
+    def cmd_grow_left(self, grow_amount=None):
+        if grow_amount is None:
+            grow_amount = self.grow_amount
         if self.current > 0:
-            if self.columns[self.current - 1].width > self.grow_amount:
-                self.columns[self.current - 1].width -= self.grow_amount
-                self.cc.width += self.grow_amount
+            if self.columns[self.current - 1].width > grow_amount:
+                self.columns[self.current - 1].width -= grow_amount
+                self.cc.width += grow_amount
                 self.group.layout_all()
         elif len(self.columns) > 1:
-            if self.columns[0].width > self.grow_amount:
-                self.columns[1].width += self.grow_amount
-                self.cc.width -= self.grow_amount
+            if self.columns[0].width > grow_amount:
+                self.columns[1].width += grow_amount
+                self.cc.width -= grow_amount
                 self.group.layout_all()
 
-    def cmd_grow_right(self):
+    def cmd_grow_right(self, grow_amount=None):
+        if grow_amount is None:
+            grow_amount = self.grow_amount
         if self.current + 1 < len(self.columns):
-            if self.columns[self.current + 1].width > self.grow_amount:
-                self.columns[self.current + 1].width -= self.grow_amount
-                self.cc.width += self.grow_amount
+            if self.columns[self.current + 1].width > grow_amount:
+                self.columns[self.current + 1].width -= grow_amount
+                self.cc.width += grow_amount
                 self.group.layout_all()
         elif len(self.columns) > 1:
-            if self.cc.width > self.grow_amount:
-                self.cc.width -= self.grow_amount
-                self.columns[self.current - 1].width += self.grow_amount
+            if self.cc.width > grow_amount:
+                self.cc.width -= grow_amount
+                self.columns[self.current - 1].width += grow_amount
                 self.group.layout_all()
 
-    def cmd_grow_up(self):
+    def cmd_grow_up(self, grow_amount=None):
+        if grow_amount is None:
+            grow_amount = self.grow_amount
         col = self.cc
         if col.current > 0:
-            if col.heights[col[col.current - 1]] > self.grow_amount:
-                col.heights[col[col.current - 1]] -= self.grow_amount
-                col.heights[col.cw] += self.grow_amount
+            if col.heights[col[col.current - 1]] > grow_amount:
+                col.heights[col[col.current - 1]] -= grow_amount
+                col.heights[col.cw] += grow_amount
                 self.group.layout_all()
         elif len(col) > 1:
-            if col.heights[col.cw] > self.grow_amount:
-                col.heights[col[1]] += self.grow_amount
-                col.heights[col.cw] -= self.grow_amount
+            if col.heights[col.cw] > grow_amount:
+                col.heights[col[1]] += grow_amount
+                col.heights[col.cw] -= grow_amount
                 self.group.layout_all()
 
-    def cmd_grow_down(self):
+    def cmd_grow_down(self, grow_amount=None):
+        if grow_amount is None:
+            grow_amount = self.grow_amount
         col = self.cc
         if col.current + 1 < len(col):
-            if col.heights[col[col.current + 1]] > self.grow_amount:
-                col.heights[col[col.current + 1]] -= self.grow_amount
-                col.heights[col.cw] += self.grow_amount
+            if col.heights[col[col.current + 1]] > grow_amount:
+                col.heights[col[col.current + 1]] -= grow_amount
+                col.heights[col.cw] += grow_amount
                 self.group.layout_all()
         elif len(col) > 1:
-            if col.heights[col.cw] > self.grow_amount:
-                col.heights[col[col.current - 1]] += self.grow_amount
-                col.heights[col.cw] -= self.grow_amount
+            if col.heights[col.cw] > grow_amount:
+                col.heights[col[col.current - 1]] += grow_amount
+                col.heights[col.cw] -= grow_amount
                 self.group.layout_all()
 
     def cmd_normalize(self):
