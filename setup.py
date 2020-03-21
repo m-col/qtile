@@ -29,6 +29,7 @@
 import sys
 import textwrap
 
+from setuptools import Extension
 from setuptools import setup
 from setuptools.command.install import install
 
@@ -88,8 +89,34 @@ def get_cffi_modules():
     return cffi_modules
 
 
+def get_ext_modules():
+    if '--cython' not in sys.argv:
+        return None
+
+    from Cython.Build import cythonize
+    sys.argv.remove('--cython')
+    EXTENSIONS = [
+        Extension("libtile.*", ["libqtile/*.py"]),
+        Extension("libtile.backend.*", ["libqtile/backend/*.py"]),
+        Extension("libtile.backend.x11.*", ["libqtile/backend/x11/*.py"]),
+        Extension("libtile.core.*", ["libqtile/core/*.py"]),
+        Extension("libtile.extension.*", ["libqtile/extension/*.py"]),
+        Extension("libtile.interactive.*", ["libqtile/interactive/*.py"]),
+        Extension("libtile.layout.*", ["libqtile/layout/*.py"]),
+        Extension("libtile.resources.*", ["libqtile/resources/*.py"]),
+        Extension("libtile.scripts.*", ["libqtile/scripts/*.py"]),
+        Extension("libtile.widget.*", ["libqtile/widget/*.py"]),
+    ]
+    return cythonize(
+        EXTENSIONS,
+        compiler_directives={'language_level': 3},
+        nthreads=2,
+    )
+
+
 setup(
     cmdclass={'install': CheckCairoXcb},
     cffi_modules=get_cffi_modules(),
     install_requires=["cffi>=1.0.0"],
+    ext_modules=get_ext_modules(),
 )
