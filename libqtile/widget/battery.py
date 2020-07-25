@@ -416,6 +416,16 @@ class Battery(base.ThreadedPollText):
             min=minute
         )
 
+    def mouse_enter(self, x, y):
+        self.tooltip.text = "100%"
+        self.tooltip.draw_text()
+        self.tooltip.place()
+        self.tooltip.unhide()
+        self.tooltip.draw()
+
+    def mouse_leave(self, x, y):
+        self.tooltip.hide()
+
 
 def default_icon_path() -> str:
     """Get the default path to battery icons"""

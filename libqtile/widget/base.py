@@ -36,6 +36,7 @@ from typing import Any, List, Tuple
 from libqtile import bar, configurable, confreader, drawer
 from libqtile.command_object import CommandError, CommandObject
 from libqtile.log_utils import logger
+from libqtile.popup import Popup
 
 
 # Each widget class must define which bar orientation(s) it supports by setting
@@ -114,6 +115,7 @@ class _Widget(CommandObject, configurable.Configurable):
     defaults = [
         ("background", None, "Widget background color"),
         ("mouse_callbacks", {}, "Dict of mouse button press callback functions."),
+        ("tooltip_size", [], "Tooltip size as [width, height]. Default: widget's size."),
     ]  # type: List[Tuple[str, Any, str]]
 
     def __init__(self, length, **config):
@@ -127,6 +129,7 @@ class _Widget(CommandObject, configurable.Configurable):
 
         configurable.Configurable.__init__(self, **config)
         self.add_defaults(_Widget.defaults)
+        self._tooltip = None
 
         if length in (bar.CALCULATED, bar.STRETCH):
             self.length_type = length
@@ -168,6 +171,29 @@ class _Widget(CommandObject, configurable.Configurable):
     @property
     def win(self):
         return self.bar.window.window
+
+    @property
+    def tooltip(self):
+        if not self._tooltip:
+            if self.tooltip_size:
+                width, height = self.tooltip_size
+            else:
+                width = self.width
+                height = self.height
+            if self.bar.horizontal:
+                x = self.bar.x + self.offsetx
+                if self.bar.screen.top is self.bar:
+                    y = self.bar.y + self.bar.height
+                else:
+                    y = self.bar.y - height
+            else:
+                y = self.bar.y + self.offsety
+                if self.bar.screen.left is self.bar:
+                    x = self.bar.x + self.bar.width
+                else:
+                    x = self.bar.x - width
+            self._tooltip = Popup(self.qtile, x, y, width, height)
+        return self._tooltip
 
     # Do not start the name with "test", or nosetests will try to test it
     # directly (prepend an underscore instead)
