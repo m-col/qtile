@@ -40,8 +40,8 @@ class Floating(Layout):
     Floating layout, which does nothing with windows but handles focus order
     """
     defaults = [
-        ("border_focus", "#0000ff", "Border colour for the focused window."),
-        ("border_normal", "#000000", "Border colour for un-focused windows."),
+        ("border_focus", "#0000ff", "Border colour(s) for the focused window."),
+        ("border_normal", "#000000", "Border colour(s) for un-focused windows."),
         ("border_width", 1, "Border width."),
         ("max_border_width", 0, "Border width for maximize."),
         ("fullscreen_border_width", 0, "Border width for fullscreen."),
