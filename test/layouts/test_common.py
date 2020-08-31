@@ -457,3 +457,25 @@ def test_cycle_layouts(qtile):
         # Use qtile.c.layout.info()['name'] in the assertion message, so we
         # know which layout is buggy
         assert qtile.c.window.info()['name'] == "three", qtile.c.layout.info()['name']
+
+
+class AllLayoutsMultipleBorders(AllLayoutsConfig):
+    """
+    Like AllLayouts, but all the layouts have border_focus set to a list of colors.
+    """
+    layouts = [
+        layout_cls(border_focus=['#000' '#111', '#222', '#333', '#444'])
+        for layout_name, layout_cls in AllLayoutsConfig.iter_layouts()
+    ]
+
+
+@pytest.mark.parametrize("qtile", [AllLayoutsMultipleBorders], indirect=True)
+def test_multiple_borders(qtile):
+    qtile.test_window("one")
+    qtile.test_window("two")
+
+    initial_layout_name = qtile.c.layout.info()['name']
+    while True:
+        qtile.c.next_layout()
+        if qtile.c.layout.info()['name'] == initial_layout_name:
+            break

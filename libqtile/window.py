@@ -490,11 +490,11 @@ class _Window(CommandObject):
         if send_notify:
             self.send_configure_notify(x, y, width, height)
 
-    def paint_borders(self, borderpixel, borderwidth):
+    def paint_borders(self, bordercolor, borderwidth):
         self.borderwidth = borderwidth
-        self.bordercolor = borderpixel
+        self.bordercolor = bordercolor
         self.window.configure(borderwidth=borderwidth)
-        self.window.paint_borders(borderpixel)
+        self.window.paint_borders(bordercolor, borderwidth, self.width, self.height)
 
     def send_configure_notify(self, x, y, width, height):
         """Send a synthetic ConfigureNotify"""

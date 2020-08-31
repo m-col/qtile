@@ -234,7 +234,14 @@ def safe_import(module_names, class_name, globals_, fallback=None):
 
 
 def send_notification(title, message, urgent=False, timeout=10000, id=None):
-    """Send a notification."""
+    """
+    Send a notification.
+
+    The id argument, if passed, requests the notification server to replace a visible
+    notification with the same ID. An ID is returned for each call; this would then be
+    passed when calling this function again to replace that notification. See:
+    https://developer.gnome.org/notification-spec/
+    """
     if _can_notify and Notify.get_server_info()[0]:
         notifier = Notify.Notification.new(title, message)
         notifier.set_timeout(timeout)

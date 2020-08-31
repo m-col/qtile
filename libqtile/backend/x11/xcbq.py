@@ -47,6 +47,7 @@ import xcffib
 import xcffib.randr
 import xcffib.xinerama
 import xcffib.xproto
+from xcffib.wrappers import GContextID, PixmapID
 from xcffib.xfixes import SelectionEventMask
 from xcffib.xproto import CW, EventMask, WindowClass
 
@@ -618,7 +619,7 @@ class Window:
 
     def configure(self, **kwargs):
         """
-        Arguments can be: x, y, width, height, border, sibling, stackmode
+        Arguments can be: x, y, width, height, borderwidth, sibling, stackmode
         """
         mask, values = ConfigureMasks(**kwargs)
         # older versions of xcb pack everything into unsigned ints "=I"
@@ -759,9 +760,57 @@ class Window:
             parent = Window(self.conn, q.parent)
         return root, parent, [Window(self.conn, i) for i in q.children]
 
-    def paint_borders(self, color):
-        if color:
-            self.set_attribute(borderpixel=self.conn.color_pixel(color))
+    def paint_borders(self, colors, borderwidth, width, height):
+        if not colors or not borderwidth:
+            return
+
+        if isinstance(colors, str):
+            self.set_attribute(borderpixel=self.conn.color_pixel(colors))
+            return
+
+        if len(colors) > borderwidth:
+            colors = colors[:borderwidth]
+        core = self.conn.conn.core
+        outer_w = width + borderwidth * 2
+        outer_h = height + borderwidth * 2
+
+        with PixmapID(self.conn.conn) as pixmap:
+            with GContextID(self.conn.conn) as gc:
+                core.CreatePixmap(
+                    self.conn.default_screen.root_depth, pixmap, self.wid, outer_w, outer_h
+                )
+                core.CreateGC(gc, pixmap, 0, None)
+                borders = len(colors)
+                borderwidths = [borderwidth // borders] * borders
+                for i in range(borderwidth % borders):
+                    borderwidths[i] += 1
+                coord = 0
+                for i in range(len(borderwidths)):
+                    core.ChangeGC(
+                        gc, xcffib.xproto.GC.Foreground, [self.conn.color_pixel(colors[i])]
+                    )
+                    rect = xcffib.xproto.RECTANGLE.synthetic(
+                        coord, coord, outer_w - coord * 2, outer_h - coord * 2
+                    )
+                    core.PolyFillRectangle(pixmap, gc, 1, [rect])
+                    coord += borderwidths[i]
+                self.set_borderpixmap(pixmap, gc, borderwidth, width, height)
+
+    def set_borderpixmap(self, pixmap, gc, borderwidth, width, height):
+        core = self.conn.conn.core
+        outer_w = width + borderwidth * 2
+        outer_h = height + borderwidth * 2
+        with PixmapID(self.conn.conn) as border:
+            core.CreatePixmap(
+                self.conn.default_screen.root_depth, border, self.wid, outer_w, outer_h
+            )
+            most_w = outer_w - borderwidth
+            most_h = outer_h - borderwidth
+            core.CopyArea(pixmap, border, gc, borderwidth, borderwidth, 0, 0, most_w, most_h)
+            core.CopyArea(pixmap, border, gc, 0, 0, most_w, most_h, borderwidth, borderwidth)
+            core.CopyArea(pixmap, border, gc, borderwidth, 0, 0, most_h, most_w, borderwidth)
+            core.CopyArea(pixmap, border, gc, 0, borderwidth, most_w, 0, borderwidth, most_h)
+            core.ChangeWindowAttributes(self.wid, xcffib.xproto.CW.BorderPixmap, [border])
 
 
 class Connection:
