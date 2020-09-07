@@ -776,37 +776,14 @@ class Connection:
         self._connected = True
         self.cursors = Cursors(self)
         self.setup = self.conn.get_setup()
-        extensions = self.extensions()
         self.screens = [Screen(self, i) for i in self.setup.roots]
         self.default_screen = self.screens[self.conn.pref_screen]
+        self.atoms = AtomCache(self)
 
+        extensions = self.extensions()
         for i in extensions:
             if i in self._extmap:
                 setattr(self, i, self._extmap[i](self))
-
-        self.pseudoscreens = []
-        if "xinerama" in extensions:
-            for i, s in enumerate(self.xinerama.query_screens()):
-                scr = PseudoScreen(
-                    self,
-                    s.x_org,
-                    s.y_org,
-                    s.width,
-                    s.height,
-                )
-                self.pseudoscreens.append(scr)
-        elif "randr" in extensions:
-            for i in self.randr.query_crtcs(self.screens[0].root.wid):
-                scr = PseudoScreen(
-                    self,
-                    i["x"],
-                    i["y"],
-                    i["width"],
-                    i["height"],
-                )
-                self.pseudoscreens.append(scr)
-
-        self.atoms = AtomCache(self)
 
         self.code_to_syms = {}
         self.first_sym_to_code = None
@@ -818,6 +795,30 @@ class Connection:
     def finalize(self):
         self.cursors.finalize()
         self.disconnect()
+
+    def get_pseudoscreens(self):
+        pseudoscreens = []
+        if hasattr(self, "xinerama"):
+            for i, s in enumerate(self.xinerama.query_screens()):
+                scr = PseudoScreen(
+                    self,
+                    s.x_org,
+                    s.y_org,
+                    s.width,
+                    s.height,
+                )
+                pseudoscreens.append(scr)
+        elif hasattr(self, "randr"):
+            for i in self.randr.query_crtcs(self.screens[0].root.wid):
+                scr = PseudoScreen(
+                    self,
+                    i["x"],
+                    i["y"],
+                    i["width"],
+                    i["height"],
+                )
+                pseudoscreens.append(scr)
+        return pseudoscreens
 
     def refresh_keymap(self, first=None, count=None):
         if first is None:

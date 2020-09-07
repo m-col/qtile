@@ -284,9 +284,10 @@ class Screen(CommandObject):
         self.y = y
         self.width = width
         self.height = height
-        self.set_group(group)
         for i in self.gaps:
             i._configure(qtile, self)
+        if not self.group:
+            self.set_group(group)
         if self.wallpaper:
             self.wallpaper = os.path.expanduser(self.wallpaper)
             self.paint(self.wallpaper, self.wallpaper_mode)

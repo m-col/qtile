@@ -140,7 +140,7 @@ class XCore(base.Core):
         # --primary or whatever. So we need to alias screens that should be
         # aliased, but preserve order as well. See #383.
         xywh = OrderedDict()  # type: Dict[Tuple[int, int], Tuple[int, int]]
-        for screen in self.conn.pseudoscreens:
+        for screen in self.conn.get_pseudoscreens():
             pos = (screen.x, screen.y)
             width, height = xywh.get(pos, (0, 0))
             xywh[pos] = (max(width, screen.width), max(height, screen.height))

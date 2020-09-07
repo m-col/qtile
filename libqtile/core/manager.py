@@ -206,6 +206,8 @@ class Qtile(CommandObject):
         self.update_net_desktops()
         hook.subscribe.setgroup(self.update_net_desktops)
 
+        hook.subscribe.screen_change(self.reconfigure_screens)
+
         hook.fire("startup_complete")
 
     @property
@@ -333,7 +335,7 @@ class Qtile(CommandObject):
         into separate screens)
         """
         for i, s in enumerate(self.config.fake_screens):
-            # should have x,y, width and height set
+            # should have x, y, width and height set
             s._configure(self, i, s.x, s.y, s.width, s.height, self.groups[i])
             if not self.current_screen:
                 self.current_screen = s
@@ -359,6 +361,31 @@ class Qtile(CommandObject):
                 self, i, x, y, w, h, self.groups[i],
             )
             self.screens.append(scr)
+
+    def reconfigure_screens(self, ev):
+        """
+        This configures screens upon firing of the screen_change hook.
+        """
+        screens = []
+        screen_info = self.core.get_screen_info()
+        logger.info("Reconfiguring screens to: {}".format(screen_info))
+
+        for i, (x, y, w, h) in enumerate(screen_info):
+            if i < len(self.screens):
+                scr = self.screens[i]
+            elif i < len(self.config.screens):
+                scr = self.config.screens[i]
+            else:
+                scr = Screen()
+
+            scr._configure(self, i, x, y, w, h, self.groups[i])
+            screens.append(scr)
+
+        for group in self.groups:
+            if group.screen and group.screen not in screens:
+                group.screen = None
+
+        self.screens = screens
 
     def paint_screen(self, screen, image_path, mode=None):
         self.core.painter.paint(screen, image_path, mode)
