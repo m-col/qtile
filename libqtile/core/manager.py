@@ -159,7 +159,6 @@ class Qtile(CommandObject):
         self.current_screen = None
         self.screens = []
         self._process_screens()
-        self.current_screen = self.screens[0]
         self._drag = None
 
         self.conn.flush()
@@ -205,6 +204,9 @@ class Qtile(CommandObject):
                 screen.group.layout_all()
         self.update_net_desktops()
         hook.subscribe.setgroup(self.update_net_desktops)
+
+        if self.config.reconfigure_screens:
+            hook.subscribe.screen_change(self.cmd_reconfigure_screens)
 
         hook.fire("startup_complete")
 
@@ -326,14 +328,16 @@ class Qtile(CommandObject):
             logger.exception('exception during finalize')
             self.core.remove_listener()
 
-    def _process_fake_screens(self):
+    def _process_fake_screens(self) -> None:
         """
         Since Xephyr and Xnest don't really support offset screens, we'll fake
         it here for testing, (or if you want to partition a physical monitor
         into separate screens)
         """
+        self.screens = []
+
         for i, s in enumerate(self.config.fake_screens):
-            # should have x,y, width and height set
+            # should have x, y, width and height set
             s._configure(self, i, s.x, s.y, s.width, s.height, self.groups[i])
             if not self.current_screen:
                 self.current_screen = s
@@ -344,13 +348,14 @@ class Qtile(CommandObject):
             self._process_fake_screens()
             return
 
+        self.screens = []
         screen_info = self.core.get_screen_info()
 
         for i, (x, y, w, h) in enumerate(screen_info):
-            if i + 1 > len(self.config.screens):
-                scr = Screen()
-            else:
+            if i < len(self.config.screens):
                 scr = self.config.screens[i]
+            else:
+                scr = Screen()
 
             if not self.current_screen:
                 self.current_screen = scr
@@ -359,6 +364,23 @@ class Qtile(CommandObject):
                 self, i, x, y, w, h, self.groups[i],
             )
             self.screens.append(scr)
+
+    def cmd_reconfigure_screens(self, ev=None):
+        """
+        This can be used to set up screens again during run time. Intended usage is to
+        be called when the screen_change hook is fired, responding to changes in
+        physical monitor setup by configuring qtile.screens accordingly. The ev kwarg is
+        ignored; it is here in case this function is hooked directly to screen_change.
+        """
+        logger.info("Reconfiguring screens.")
+        self._process_screens()
+
+        for group in self.groups:
+            if group.screen:
+                if group.screen in self.screens:
+                    group.layout_all()
+                else:
+                    group.hide()
 
     def paint_screen(self, screen, image_path, mode=None):
         self.core.painter.paint(screen, image_path, mode)

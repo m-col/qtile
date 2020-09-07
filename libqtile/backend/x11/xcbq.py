@@ -784,8 +784,22 @@ class Connection:
             if i in self._extmap:
                 setattr(self, i, self._extmap[i](self))
 
-        self.pseudoscreens = []
-        if "xinerama" in extensions:
+        self.code_to_syms = {}
+        self.sym_to_codes = None
+        self.refresh_keymap()
+        self.atoms = AtomCache(self)
+
+        self.modmap = None
+        self.refresh_modmap()
+
+    def finalize(self):
+        self.cursors.finalize()
+        self.disconnect()
+
+    @property
+    def pseudoscreens(self):
+        pseudoscreens = []
+        if hasattr(self, "xinerama"):
             for i, s in enumerate(self.xinerama.query_screens()):
                 scr = PseudoScreen(
                     self,
@@ -794,8 +808,8 @@ class Connection:
                     s.width,
                     s.height,
                 )
-                self.pseudoscreens.append(scr)
-        elif "randr" in extensions:
+                pseudoscreens.append(scr)
+        elif hasattr(self, "randr"):
             for i in self.randr.query_crtcs(self.screens[0].root.wid):
                 scr = PseudoScreen(
                     self,
@@ -804,20 +818,8 @@ class Connection:
                     i["width"],
                     i["height"],
                 )
-                self.pseudoscreens.append(scr)
-
-        self.atoms = AtomCache(self)
-
-        self.code_to_syms = {}
-        self.sym_to_codes = None
-        self.refresh_keymap()
-
-        self.modmap = None
-        self.refresh_modmap()
-
-    def finalize(self):
-        self.cursors.finalize()
-        self.disconnect()
+                pseudoscreens.append(scr)
+        return pseudoscreens
 
     def refresh_keymap(self, first=None, count=None):
         if first is None:
