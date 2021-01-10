@@ -26,6 +26,7 @@ import xcffib.xproto
 from xcffib.xproto import EventMask, SetMode, StackMode
 
 from libqtile import hook, utils
+from libqtile.backend import base
 from libqtile.command_object import CommandError, CommandObject
 from libqtile.log_utils import logger
 
@@ -138,7 +139,7 @@ def _float_setter(attr):
     return setter
 
 
-class _Window(CommandObject):
+class _Window(base.Window, CommandObject):
     _window_mask = 0  # override in child class
 
     def __init__(self, window, qtile):

@@ -34,8 +34,8 @@ from xcffib.xproto import (
     SetMode,
 )
 
-from libqtile import bar, window
-from libqtile.backend.x11 import xcbq
+from libqtile import bar
+from libqtile.backend.x11 import window, xcbq
 from libqtile.widget import base
 
 XEMBED_PROTOCOL_VERSION = 0

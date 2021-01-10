@@ -28,9 +28,9 @@ import xcffib
 import xcffib.render
 import xcffib.xproto
 
-from libqtile import config, hook, utils, window
+from libqtile import config, hook, utils
 from libqtile.backend import base
-from libqtile.backend.x11 import xcbq
+from libqtile.backend.x11 import window, xcbq
 from libqtile.log_utils import logger
 from libqtile.utils import QtileError
 
@@ -56,6 +56,10 @@ class ExistingWMException(Exception):
 
 
 class Core(base.Core):
+    Window = window.Window
+    Static = window.Static
+    Internal = window.Internal
+
     def __init__(self, display_name: str = None) -> None:
         """Setup the X11 core backend
 

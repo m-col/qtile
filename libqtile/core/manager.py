@@ -34,8 +34,8 @@ import xcffib.xinerama
 import xcffib.xproto
 
 import libqtile
-from libqtile import command_interface, confreader, hook, utils, window
-from libqtile.backend.x11 import xcbq
+from libqtile import command_interface, confreader, hook, utils
+from libqtile.backend.x11 import window, xcbq
 from libqtile.command_client import InteractiveCommandClient
 from libqtile.command_interface import IPCCommandServer, QtileCommandInterface
 from libqtile.command_object import (
@@ -505,13 +505,13 @@ class Qtile(CommandObject):
         if w.wid not in self.windows_map:
             if internal:
                 try:
-                    c = window.Internal(w, self)
+                    c = self.core.Internal(w, self)
                 except (xcffib.xproto.WindowError, xcffib.xproto.AccessError):
                     return
                 self.windows_map[w.wid] = c
             else:
                 try:
-                    c = window.Window(w, self)
+                    c = self.core.Window(w, self)
                 except (xcffib.xproto.WindowError, xcffib.xproto.AccessError):
                     return
 
@@ -557,7 +557,7 @@ class Qtile(CommandObject):
         def get_interesting_pid(win):
             # We don't need to kill Internal or Static windows, they're qtile
             # managed and don't have any state.
-            if not isinstance(win, window.Window):
+            if not isinstance(win, self.core.Window):
                 return None
             try:
                 return win.window.get_net_wm_pid()
@@ -1213,14 +1213,14 @@ class Qtile(CommandObject):
         """Return info for each client window"""
         return [
             i.info() for i in self.windows_map.values()
-            if not isinstance(i, window.Internal)
+            if not isinstance(i, self.core.Internal)
         ]
 
     def cmd_internal_windows(self):
         """Return info for each internal window (bars, for example)"""
         return [
             i.info() for i in self.windows_map.values()
-            if isinstance(i, window.Internal)
+            if isinstance(i, self.core.Internal)
         ]
 
     def cmd_qtile_info(self):

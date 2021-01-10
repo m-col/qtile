@@ -18,7 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from libqtile import group, hook, utils, window
+from libqtile import group, hook, utils
+from libqtile.backend.x11 import window
 from libqtile.log_utils import logger
 
 

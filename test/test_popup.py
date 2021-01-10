@@ -21,7 +21,7 @@
 
 import pytest
 
-from libqtile.backend.x11 import xcbq
+from libqtile.backend.x11 import core, xcbq
 from libqtile.popup import Popup
 from test.conftest import BareConfig
 
@@ -33,9 +33,12 @@ def test_popup_focus(manager):
 
     # we have to add .conn so that Popup thinks this is libqtile.qtile
     manager.conn = xcbq.Connection(manager.display)
+    # and .core so that Popup can create an Internal window
+    manager.core = core.Core
+
+    popup = Popup(manager)
 
     try:
-        popup = Popup(manager)
         popup.width = manager.c.screen.info()["width"]
         popup.height = manager.c.screen.info()["height"]
         popup.place()
