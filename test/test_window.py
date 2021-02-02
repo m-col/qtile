@@ -1,7 +1,7 @@
 import pytest
 
 from libqtile.backend.x11 import xcbq
-from test.conftest import BareConfig
+from test.conftest import BareConfig, create_window
 
 bare_config = pytest.mark.parametrize("manager", [BareConfig], indirect=True)
 
@@ -55,13 +55,13 @@ def test_min_size_hint(manager):
 
     def size_hints():
         nonlocal w
-        w = conn.create_window(0, 0, 100, 100)
+        w = create_window(conn, 0, 0, 100, 100)
 
         # set the size hints
         hints = [0] * 18
         hints[5] = hints[6] = 100
         w.set_property("WM_NORMAL_HINTS", hints, type="WM_SIZE_HINTS", format=32)
-        w.map()
+        w.unhide()
         conn.conn.flush()
 
     try:
@@ -79,7 +79,7 @@ def test_min_size_hint(manager):
         assert manager.c.window.info()['width'] == 200
         assert manager.c.window.info()['height'] == 200
     finally:
-        w.kill_client()
+        w.kill()
         conn.finalize()
 
 
@@ -90,13 +90,13 @@ def test_max_size_hint(manager):
 
     def size_hints():
         nonlocal w
-        w = conn.create_window(0, 0, 100, 100)
+        w = create_window(conn, 0, 0, 100, 100)
 
         # set the size hints
         hints = [0] * 18
         hints[7] = hints[8] = 100
         w.set_property("WM_NORMAL_HINTS", hints, type="WM_SIZE_HINTS", format=32)
-        w.map()
+        w.unhide()
         conn.conn.flush()
 
     try:
@@ -114,7 +114,7 @@ def test_max_size_hint(manager):
         assert manager.c.window.info()['width'] == 100
         assert manager.c.window.info()['height'] == 100
     finally:
-        w.kill_client()
+        w.kill()
         conn.finalize()
 
 
@@ -125,13 +125,13 @@ def test_both_size_hints(manager):
 
     def size_hints():
         nonlocal w
-        w = conn.create_window(0, 0, 100, 100)
+        w = create_window(conn, 0, 0, 100, 100)
 
         # set the size hints
         hints = [0] * 18
         hints[5] = hints[6] = hints[7] = hints[8] = 100
         w.set_property("WM_NORMAL_HINTS", hints, type="WM_SIZE_HINTS", format=32)
-        w.map()
+        w.unhide()
         conn.conn.flush()
 
     try:
@@ -149,5 +149,5 @@ def test_both_size_hints(manager):
         assert manager.c.window.info()['width'] == 100
         assert manager.c.window.info()['height'] == 100
     finally:
-        w.kill_client()
+        w.kill()
         conn.finalize()
