@@ -1,0 +1,6 @@
+from typing import Any, Optional
+
+def keysym_from_name(name: Any, case_insensitive: bool = ...): ...
+
+class Context:
+    def keymap_new_from_names(self, rules: Optional[Any] = ..., model: Optional[Any] = ..., layout: Optional[Any] = ..., variant: Optional[Any] = ..., options: Optional[Any] = ...): ...
