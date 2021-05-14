@@ -5,7 +5,7 @@ import enum
 import typing
 from abc import ABCMeta, abstractmethod
 
-from libqtile.command.base import CommandObject, ItemT
+from libqtile.command.base import CommandError, CommandObject, ItemT
 
 if typing.TYPE_CHECKING:
     from typing import Dict, List, Optional, Tuple, Union
@@ -113,7 +113,7 @@ class _Window(CommandObject, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def group(self) -> _Group:
+    def group(self) -> Optional[_Group]:
         """The group to which this window belongs."""
 
     @property
@@ -204,6 +204,32 @@ class Window(_Window, metaclass=ABCMeta):
 
     def paint_borders(self, color, width) -> None:
         """Paint the window borders with the given color and width"""
+
+    def togroup(self, group_name=None, *, switch_group=False):
+        """Move window to a specified group
+
+        Also switch to that group if switch_group is True.
+        """
+        if group_name is None:
+            group = self.qtile.current_group
+        else:
+            group = self.qtile.groups_map.get(group_name)
+            if group is None:
+                raise CommandError("No such group: %s" % group_name)
+
+        if self.group is not group:
+            self.hide()
+            if self.group:
+                if self.group.screen:
+                    # for floats remove window offset
+                    self.x -= self.group.screen.x
+                self.group.remove(self)
+
+            if group.screen and self.x < group.screen.x:
+                self.x += group.screen.x
+            group.add(self)
+            if switch_group:
+                group.cmd_toscreen(toggle=False)
 
     @abstractmethod
     def cmd_focus(self, warp: Optional[bool] = None) -> None:

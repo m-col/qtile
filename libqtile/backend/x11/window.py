@@ -1371,32 +1371,6 @@ class Window(_Window, base.Window):
             self.height = h
         self._reconfigure_floating(new_float_state=new_float_state)
 
-    def togroup(self, group_name=None, *, switch_group=False):
-        """Move window to a specified group
-
-        Also switch to that group if switch_group is True.
-        """
-        if group_name is None:
-            group = self.qtile.current_group
-        else:
-            group = self.qtile.groups_map.get(group_name)
-            if group is None:
-                raise CommandError("No such group: %s" % group_name)
-
-        if self.group is not group:
-            self.hide()
-            if self.group:
-                if self.group.screen:
-                    # for floats remove window offset
-                    self.x -= self.group.screen.x
-                self.group.remove(self)
-
-            if group.screen and self.x < group.screen.x:
-                self.x += group.screen.x
-            group.add(self)
-            if switch_group:
-                group.cmd_toscreen(toggle=False)
-
     def toscreen(self, index=None):
         """Move window to a specified screen, or the current screen."""
         if index is None:

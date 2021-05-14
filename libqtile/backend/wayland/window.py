@@ -46,6 +46,7 @@ if typing.TYPE_CHECKING:
     from libqtile.backend.wayland.core import Core
     from libqtile.backend.wayland.output import Output
     from libqtile.core.manager import Qtile
+    from libqtile.group import _Group
 
 EDGES_TILED = Edges.TOP | Edges.BOTTOM | Edges.LEFT | Edges.RIGHT
 EDGES_FLOAT = Edges.NONE
@@ -71,7 +72,7 @@ class Window(base.Window, HasListeners):
         self.surface = surface
         self.popups: List[XdgPopupWindow] = []
         self._wid = wid
-        self._group = 0
+        self._group: Optional[_Group] = None
         self.mapped = False
         self.x = 0
         self.y = 0
@@ -109,12 +110,12 @@ class Window(base.Window, HasListeners):
         return self.surface.surface.current.height
 
     @property
-    def group(self):
+    def group(self) -> Optional[_Group]:
         return self._group
 
     @group.setter
-    def group(self, index):
-        self._group = index
+    def group(self, group: Optional[_Group]):
+        self._group = group
 
     def _on_map(self, _listener, _data):
         logger.debug("Signal: window map")
@@ -436,7 +437,7 @@ class Static(Window, base.Static):
         base.Static.__init__(self)
         self.core = core
         self.qtile = qtile
-        self._group = 0
+        self._group: Optional[_Group] = None
         self.surface = surface
         self._wid = wid
         self.screen = None
