@@ -193,7 +193,7 @@ class Window(base.Window, HasListeners):
 
     def paint_borders(self, color, width) -> None:
         if color:
-            self.border_color = _rgb(color)
+            self.bordercolor = _rgb(color)
         self.borderwidth = width
 
     @property
