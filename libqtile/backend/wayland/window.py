@@ -162,6 +162,22 @@ class Window(base.Window, HasListeners):
     def kill(self):
         self.surface.send_close()
 
+    def info(self) -> Dict:
+        """Return a dictionary of info."""
+        return dict(
+            name=self.name,
+            x=self.x,
+            y=self.y,
+            width=self.width,
+            height=self.height,
+            group=self.group.name if self.group else None,
+            id=self.wid,
+            floating=self._float_state != FloatStates.NOT_FLOATING,
+            maximized=self._float_state == FloatStates.MAXIMIZED,
+            minimized=self._float_state == FloatStates.MINIMIZED,
+            fullscreen=self._float_state == FloatStates.FULLSCREEN
+        )
+
     def get_wm_class(self) -> Optional[str]:
         # TODO
         return None
@@ -339,19 +355,7 @@ class Window(base.Window, HasListeners):
 
     def cmd_info(self) -> Dict:
         """Return a dictionary of info."""
-        return dict(
-            name=self.name,
-            x=self.x,
-            y=self.y,
-            width=self.width,
-            height=self.height,
-            group=self.group.name if self.group else None,
-            id=self.wid,
-            floating=self._float_state != FloatStates.NOT_FLOATING,
-            maximized=self._float_state == FloatStates.MAXIMIZED,
-            minimized=self._float_state == FloatStates.MINIMIZED,
-            fullscreen=self._float_state == FloatStates.FULLSCREEN
-        )
+        return self.info()
 
     def cmd_move_floating(self, dx: int, dy: int) -> None:
         self._tweak_float(dx=dx, dy=dy)

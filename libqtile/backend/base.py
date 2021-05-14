@@ -133,6 +133,10 @@ class _Window(CommandObject, metaclass=ABCMeta):
     def kill(self) -> None:
         """Kill the window"""
 
+    @abstractmethod
+    def info(self) -> Dict:
+        """Get information on the window"""
+
     def get_wm_class(self) -> Optional[str]:
         """Return the class of the window"""
 
