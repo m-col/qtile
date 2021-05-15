@@ -73,7 +73,7 @@ class Window(base.Window, HasListeners):
         self.popups: List[XdgPopupWindow] = []
         self._wid = wid
         self._group: Optional[_Group] = None
-        self.mapped = False
+        self._mapped: bool = False
         self.x = 0
         self.y = 0
         self.bordercolor: ffi.CData = _rgb((0, 0, 0, 1))
@@ -116,6 +116,21 @@ class Window(base.Window, HasListeners):
     @group.setter
     def group(self, group: Optional[_Group]):
         self._group = group
+
+    @property
+    def mapped(self) -> bool:
+        return self._mapped
+
+    @mapped.setter
+    def mapped(self, mapped: bool) -> None:
+        """We keep track of which windows are mapped to we know which to render"""
+        self._mapped = mapped
+        if mapped:
+            if self not in self.core.mapped_windows:
+                self.core.mapped_windows.append(self)
+        else:
+            if self in self.core.mapped_windows:
+                self.core.mapped_windows.remove(self)
 
     def _on_map(self, _listener, _data):
         logger.debug("Signal: window map")
@@ -303,8 +318,8 @@ class Window(base.Window, HasListeners):
         self.paint_borders(bordercolor, borderwidth)
 
         if above:
-            # TODO when general z-axis control is implemented
-            pass
+            self.core.mapped_windows.remove(self)
+            self.core.mapped_windows.append(self)
 
         self.damage()
 
@@ -413,8 +428,9 @@ class Window(base.Window, HasListeners):
         self.fullscreen = False
 
     def cmd_bring_to_front(self) -> None:
-        # TODO
-        pass
+        if self.mapped:
+            self.core.mapped_windows.remove(self)
+            self.core.mapped_windows.append(self)
 
     def cmd_kill(self) -> None:
         self.kill()
@@ -443,7 +459,7 @@ class Static(Window, base.Static):
         self.surface = surface
         self._wid = wid
         self.screen = None
-        self.mapped = False
+        self._mapped: bool = False
         self.x = 0
         self.y = 0
         self.borderwidth: int = 0
@@ -463,7 +479,32 @@ class Static(Window, base.Static):
             if surface.output is None:
                 surface.output = core.output_layout.output_at(core.cursor.x, core.cursor.y)
             self.output = core.output_from_wlr_output(surface.output)
-            self.output.layers[surface.client_pending.layer].append(self)
+            self.mapped = True
+
+    @property
+    def mapped(self) -> bool:
+        # This is identical to the parent class' version but mypy has a bug that
+        # triggers a false positive: https://github.com/python/mypy/issues/1465
+        return self._mapped
+
+    @mapped.setter
+    def mapped(self, mapped: bool) -> None:
+        self._mapped = mapped
+
+        tracker: List  # mypy complains as the signatures of the two possibilities differ
+        if self.is_layer:
+            tracker = self.output.layers[self.surface.client_pending.layer]  # type: ignore
+        else:
+            tracker = self.core.mapped_windows
+
+        if mapped:
+            if self not in tracker:
+                tracker.append(self)
+        else:
+            if self in tracker:
+                tracker.remove(self)
+
+        if self.is_layer:
             self.output.organise_layers()
 
     def _on_map(self, _listener, data):
