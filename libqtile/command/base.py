@@ -83,7 +83,7 @@ class CommandObject(metaclass=abc.ABCMeta):
             if items is not None and selector and selector not in items:
                 raise SelectError("", name, selectors)
 
-            obj = obj._select(name, selector)
+            obj = obj._select(name, selector)  # type: ignore
             if obj is None:
                 raise SelectError("", name, selectors)
         return obj
@@ -115,7 +115,7 @@ class CommandObject(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def _select(self, name: str, sel: Optional[Union[str, int]]) -> CommandObject:
+    def _select(self, name: str, sel: Optional[Union[str, int]]) -> Optional[CommandObject]:
         """Select the given item of the given item class
 
         This method is called with the following guarantees:
