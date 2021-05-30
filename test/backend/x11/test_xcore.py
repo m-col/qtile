@@ -1,4 +1,9 @@
+from libqtile.backend import get_core
 from libqtile.backend.x11 import core
+
+
+def test_get_core_x11(display):
+    get_core('x11', display).finalize()
 
 
 def test_keys(display):
