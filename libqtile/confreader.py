@@ -31,10 +31,11 @@ from typing import TYPE_CHECKING
 from libqtile.backend.x11 import core
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Union
+    from typing import Any, Dict, List, Optional, Union
 
     from typing_extensions import Literal
 
+    from libqtile.backend.wayland import InputConfig
     from libqtile.config import Group, Key, Mouse, Rule, Screen
     from libqtile.layout.base import Layout
 
@@ -72,6 +73,7 @@ class Config:
     reconfigure_screens: bool
     wmname: str
     auto_minimize: bool
+    wl_input_rules: Optional[Dict[str, InputConfig]]
 
     def __init__(self, file_path=None, **settings):
         """Create a Config() object from settings

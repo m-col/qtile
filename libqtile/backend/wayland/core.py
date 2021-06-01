@@ -65,7 +65,7 @@ from xkbcommon import xkb
 
 from libqtile import hook
 from libqtile.backend import base
-from libqtile.backend.wayland import keyboard, window, wlrq
+from libqtile.backend.wayland import inputs, window, wlrq
 from libqtile.backend.wayland.output import Output
 from libqtile.log_utils import logger
 
@@ -107,7 +107,7 @@ class Core(base.Core, wlrq.HasListeners):
         self._current_output: Optional[Output] = None
 
         # set up inputs
-        self.keyboards: List[keyboard.Keyboard] = []
+        self.keyboards: List[inputs.Keyboard] = []
         self.grabbed_keys: List[Tuple[int, int]] = []
         self.grabbed_buttons: List[Tuple[int, int]] = []
         DataDeviceManager(self.display)
@@ -118,6 +118,9 @@ class Core(base.Core, wlrq.HasListeners):
         self.add_listener(self.seat.request_start_drag_event, self._on_request_start_drag)
         self.add_listener(self.seat.start_drag_event, self._on_start_drag)
         self.add_listener(self.backend.new_input_event, self._on_new_input)
+        # Some devices are added early, so we need to remember to configure them
+        self._pending_input_devices: List[input_device.InputDevice] = []
+        hook.subscribe.startup_complete(self._configure_pending_inputs)
 
         # set up outputs
         self.outputs: List[Output] = []
@@ -226,13 +229,15 @@ class Core(base.Core, wlrq.HasListeners):
             self._add_new_keyboard(device)
 
         capabilities = WlSeat.capability.pointer
-        if len(self.keyboards) > 0:
+        if self.keyboards:
             capabilities |= WlSeat.capability.keyboard
-
-        logger.info("New input: " + str(device.device_type))
-        logger.info("Input capabilities: " + str(capabilities))
-
         self.seat.set_capabilities(capabilities)
+
+        logger.info(f"New {device.device_type.name}: {device.name}")
+        if self.qtile:
+            inputs.configure_device(device, self.qtile.config.wl_input_rules)
+        else:
+            self._pending_input_devices.append(device)
 
     def _on_new_output(self, _listener, wlr_output: wlrOutput):
         logger.debug("Signal: backend new_output_event")
@@ -527,13 +532,17 @@ class Core(base.Core, wlrq.HasListeners):
         return handled
 
     def _add_new_pointer(self, device: input_device.InputDevice):
-        logger.info("Adding new pointer")
         self.cursor.attach_input_device(device)
 
     def _add_new_keyboard(self, device: input_device.InputDevice):
-        logger.info("Adding new keyboard")
-        self.keyboards.append(keyboard.Keyboard(self, device))
+        self.keyboards.append(inputs.Keyboard(self, device))
         self.seat.set_keyboard(device)
+
+    def _configure_pending_inputs(self):
+        """Configure inputs that were detected before the config was loaded."""
+        for device in self._pending_input_devices:
+            inputs.configure_device(device, self.qtile.config.wl_input_rules)
+        self._pending_input_devices.clear()
 
     def setup_listener(self, qtile: Qtile) -> None:
         """Setup a listener for the given qtile instance"""
