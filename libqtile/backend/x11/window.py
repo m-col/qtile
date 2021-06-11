@@ -716,25 +716,28 @@ class _Window:
     def get_pid(self):
         return self.window.get_net_wm_pid()
 
-    def place(self, x, y, width, height, borderwidth, bordercolor,
-              above=False, margin=None, respect_hints=False):
+    def place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False,
+    ):
         """
         Places the window at the specified location with the given size.
 
         Parameters
         ==========
-        x : int
-        y : int
-        width : int
-        height : int
-        borderwidth : int
-        bordercolor : string
+        x : int, optional
+        y : int, optional
+        width : int, optional
+        height : int, optional
+        borderwidth : int, optional
+        bordercolor : string, optional
         above : bool, optional
         margin : int or list, optional
             space around window as int or list of ints [N E S W]
         above : bool, optional
             If True, the geometry will be adjusted to respect hints provided by the
             client.
+        respect_hints : bool, optional
         """
 
         # TODO: self.x/y/height/width are updated BEFORE
@@ -755,13 +758,17 @@ class _Window:
         if margin is not None:
             if isinstance(margin, int):
                 margin = [margin] * 4
-            x += margin[3]
-            y += margin[0]
-            width -= margin[1] + margin[3]
-            height -= margin[0] + margin[2]
+            if x is not None:
+                x += margin[3]
+            if y is not None:
+                y += margin[0]
+            if width is not None:
+                width -= margin[1] + margin[3]
+            if height is not None:
+                height -= margin[0] + margin[2]
 
         # Optionally adjust geometry to respect client hints
-        if respect_hints:
+        if respect_hints and width is not None and height is not None:
             flags = self.hints.get("flags", {})
             if "PMinSize" in flags:
                 width = max(width, self.hints.get('min_width', 0))
@@ -791,27 +798,32 @@ class _Window:
 
         # save x and y float offset
         if self.group is not None and self.group.screen is not None:
-            self.float_x = x - self.group.screen.x
-            self.float_y = y - self.group.screen.y
+            if x is not None:
+                self.float_x = x - self.group.screen.x
+            if y is not None:
+                self.float_y = y - self.group.screen.y
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-        kwarg = dict(
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-        )
+        kwarg = {}
+        if x is not None:
+            self.x = x
+            kwarg['x'] = x
+        if y is not None:
+            self.y = y
+            kwarg['y'] = y
+        if width is not None:
+            self.width = width
+            kwarg['width'] = width
+        if height is not None:
+            self.height = height
+            kwarg['height'] = height
         if above:
             kwarg['stackmode'] = StackMode.Above
 
         self.window.configure(**kwarg)
-        self.paint_borders(bordercolor, borderwidth)
+        if bordercolor and borderwidth is not None:
+            self.paint_borders(bordercolor, borderwidth)
 
-        if send_notify:
+        if send_notify and None not in (x, y, width, height):
             self.send_configure_notify(x, y, width, height)
 
     def paint_borders(self, color, width):
@@ -1086,8 +1098,6 @@ class Static(_Window, base.Static):
             self.screen.y + self.y,
             self.width,
             self.height,
-            self.borderwidth,
-            self.bordercolor
         )
         return False
 
@@ -1382,8 +1392,6 @@ class Window(_Window, base.Window):
             self.place(
                 self.x, self.y,
                 self.width, self.height,
-                self.borderwidth,
-                self.bordercolor,
                 above=True,
                 respect_hints=True,
             )
@@ -1483,7 +1491,6 @@ class Window(_Window, base.Window):
             self.place(
                 x, y,
                 width, height,
-                self.borderwidth, self.bordercolor,
             )
         self.update_state()
         return False
@@ -1717,11 +1724,6 @@ class Window(_Window, base.Window):
     def cmd_set_size_floating(self, w, h):
         """Set window dimensions to w and h"""
         self.tweak_float(w=w, h=h)
-
-    def cmd_place(self, x, y, width, height, borderwidth, bordercolor,
-                  above=False, margin=None):
-        self.place(x, y, width, height, borderwidth, bordercolor, above,
-                   margin)
 
     def cmd_get_position(self):
         return self.getposition()

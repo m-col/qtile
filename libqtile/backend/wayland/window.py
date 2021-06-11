@@ -373,36 +373,49 @@ class Window(base.Window, HasListeners):
 
         hook.fire("client_focus", self)
 
-    def place(self, x, y, width, height, borderwidth, bordercolor,
-              above=False, margin=None, respect_hints=False):
-
+    def place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False,
+    ):
         # Adjust the placement to account for layout margins, if there are any.
         if margin is not None:
             if isinstance(margin, int):
                 margin = [margin] * 4
-            x += margin[3]
-            y += margin[0]
-            width -= margin[1] + margin[3]
-            height -= margin[0] + margin[2]
+            if x is not None:
+                x += margin[3]
+            if y is not None:
+                y += margin[0]
+            if width is not None:
+                width -= margin[1] + margin[3]
+            if height is not None:
+                height -= margin[0] + margin[2]
 
         if respect_hints:
             state = self.surface.toplevel._ptr.current
-            width = max(width, state.min_width)
-            height = max(height, state.min_height)
-            if state.max_width:
-                width = min(width, state.max_width)
-            if state.max_height:
-                height = min(height, state.max_height)
+            if width is not None:
+                width = max(width, state.min_width)
+                if state.max_width:
+                    width = min(width, state.max_width)
+            if height is not None:
+                height = max(height, state.min_height)
+                if state.max_height:
+                    height = min(height, state.max_height)
 
         # save x and y float offset
         if self.group is not None and self.group.screen is not None:
-            self.float_x = x - self.group.screen.x
-            self.float_y = y - self.group.screen.y
+            if x is not None:
+                self.float_x = x - self.group.screen.x
+            if y is not None:
+                self.float_y = y - self.group.screen.y
 
-        self.x = x
-        self.y = y
-        self.surface.set_size(int(width), int(height))
-        self.paint_borders(bordercolor, borderwidth)
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
+        if width is not None and height is not None:
+            self.surface.set_size(int(width), int(height))
+        if borderwidth is not None and bordercolor is not None:
+            self.paint_borders(bordercolor, borderwidth)
 
         if above and self._mapped:
             self.core.mapped_windows.remove(self)
@@ -451,10 +464,7 @@ class Window(base.Window, HasListeners):
         if new_float_state == FloatStates.MINIMIZED:
             self.hide()
         else:
-            self.place(
-                x, y, w, h,
-                self.borderwidth, self.bordercolor, above=True, respect_hints=True
-            )
+            self.place(x, y, w, h, above=True, respect_hints=True)
         if self._float_state != new_float_state:
             self._float_state = new_float_state
             if self.group:  # may be not, if it's called from hook
@@ -495,10 +505,13 @@ class Window(base.Window, HasListeners):
     def cmd_set_size_floating(self, w: int, h: int) -> None:
         self._tweak_float(w=w, h=h)
 
-    def cmd_place(self, x, y, width, height, borderwidth, bordercolor,
-                  above=False, margin=None):
-        self.place(x, y, width, height, borderwidth, bordercolor, above,
-                   margin)
+    def cmd_place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False
+    ):
+        self.place(
+            x, y, width, height, borderwidth, bordercolor, above, margin, respect_hints,
+        )
 
     def cmd_get_position(self) -> Tuple[int, int]:
         return self.x, self.y
@@ -606,17 +619,23 @@ class Internal(base.Internal, Window):
         self.hide()
         self.qtile.call_soon(self.qtile.unmanage, self)
 
-    def place(self, x, y, width, height, borderwidth, bordercolor,
-              above=False, margin=None, respect_hints=False):
+    def place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False,
+    ):
         if above:
             self.core.mapped_windows.remove(self)
             self.core.mapped_windows.append(self)
             self.core.stack_windows()
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
+        if width is not None:
+            self.width = width
+        if height is not None:
+            self.height = height
         self._reset_texture()
         self.damage()
 
@@ -733,15 +752,21 @@ class Static(base.Static, Window):
                 if output.contains(self):
                     output.damage.add_whole()
 
-    def place(self, x, y, width, height, borderwidth, bordercolor,
-              above=False, margin=None, respect_hints=False):
-        self.x = x
-        self.y = y
-        if self.is_layer:
-            self.surface.configure(width, height)
-        else:
-            self.surface.set_size(int(width), int(height))
-            self.paint_borders(bordercolor, borderwidth)
+    def place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False,
+    ):
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
+        if width is not None and height is not None:
+            if self.is_layer:
+                self.surface.configure(width, height)
+            else:
+                self.surface.set_size(int(width), int(height))
+                if borderwidth is not None and bordercolor:
+                    self.paint_borders(bordercolor, borderwidth)
         self.damage()
 
     def cmd_bring_to_front(self) -> None:

@@ -184,9 +184,11 @@ class _Window(CommandObject, metaclass=ABCMeta):
         return False
 
     @abstractmethod
-    def place(self, x, y, width, height, borderwidth, bordercolor,
-              above=False, margin=None, respect_hints=False):
-        """Place the window in the given position."""
+    def place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False,
+    ):
+        """Place the window with the specified configuration."""
 
     def _items(self, name: str) -> ItemT:
         return None
@@ -297,10 +299,14 @@ class Window(_Window, metaclass=ABCMeta):
     def cmd_set_size_floating(self, w: int, h: int) -> None:
         """Set window dimensions to w and h"""
 
-    @abstractmethod
-    def cmd_place(self, x, y, width, height, borderwidth, bordercolor,
-                  above=False, margin=None) -> None:
-        """Place the window with the given position and geometry."""
+    def cmd_place(
+        self, x=None, y=None, width=None, height=None, borderwidth=None,
+        bordercolor=None, above=False, margin=None, respect_hints=False
+    ):
+        """Place the window with the specified configuration."""
+        self.place(
+            x, y, width, height, borderwidth, bordercolor, above, margin, respect_hints,
+        )
 
     @abstractmethod
     def cmd_toggle_floating(self) -> None:

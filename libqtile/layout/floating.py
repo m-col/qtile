@@ -284,13 +284,9 @@ class Floating(Layout):
                 above = self.compute_client_position(client, screen_rect)
 
             client.place(
-                client.x,
-                client.y,
-                client.width,
-                client.height,
-                bw,
-                bc,
-                above,
+                borderwidth=bw,
+                bordercolor=bc,
+                above=above,
                 respect_hints=True,
             )
         client.unhide()
