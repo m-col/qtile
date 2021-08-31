@@ -409,14 +409,15 @@ class Core(base.Core):
         """The name of the connected display"""
         return self._display_name
 
-    def update_client_list(self, windows_map: Dict[int, base.WindowType]) -> None:
+    def update_client_list(self) -> None:
         """Updates the client list
 
         This is needed for third party tasklists and drag and drop of tabs in
         chrome
         """
         wids = [
-            wid for wid, c in windows_map.items() if not isinstance(c, window.Internal)
+            wid for wid, c in self.qtile.windows_map.items()
+            if not isinstance(c, window.Internal)
         ]
         self._root.set_property("_NET_CLIENT_LIST", wids)
 
