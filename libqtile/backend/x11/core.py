@@ -228,7 +228,7 @@ class Core(base.Core):
         """Scan for existing windows"""
         assert self.qtile is not None
 
-        _, _, children = self._root.query_tree()
+        children = self._root.query_tree()
         for item in children:
             try:
                 attrs = item.get_attributes()
