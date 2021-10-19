@@ -3,8 +3,11 @@
 # The exported configuration variables have a different value depending on whether
 # libqtile has a 'test_data' attribute (see below)
 
+import sys
+from pathlib import Path
+
 from libqtile import bar, layout, qtile, widget
-from libqtile.config import Drag, Group, Key, Match, Rule, Screen
+from libqtile.config import Drag, DropDown, Group, Key, Match, Rule, ScratchPad, Screen
 from libqtile.dgroups import simple_key_binder
 from libqtile.lazy import lazy
 
@@ -39,6 +42,10 @@ mouse = [
          start=lazy.window.get_position()),
 ]
 
+windowpy = Path(__file__).parent.parent / "scripts" / "window.py"
+script = " ".join([sys.executable, windowpy.as_posix(), "--name", "dd", "dd", "normal"])
+dropdowns = [DropDown("dropdown1", script)]
+
 dgroups_key_binder = None
 dgroups_app_rules = []
 floating_layout = layout.Floating(float_rules=[Match(title='one')])
@@ -66,7 +73,11 @@ if hasattr(qtile, "test_data"):
              start=lazy.window.get_size()),
     )
 
+    dropdowns.append(DropDown("dropdown2", script))
+
     dgroups_key_binder = simple_key_binder
     dgroups_app_rules = [Rule(Match(wm_class='test'), float=True)]
     floating_layout = layout.Floating()
     wmname = "TEST"
+
+groups.append(ScratchPad("S", dropdowns))
