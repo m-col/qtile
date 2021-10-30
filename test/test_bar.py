@@ -24,6 +24,7 @@
 
 import os
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -32,6 +33,9 @@ import libqtile.config
 import libqtile.confreader
 import libqtile.layout
 import libqtile.widget
+from libqtile.command.base import CommandError
+
+from test.helpers import Retry
 
 
 class GBConfig(libqtile.confreader.Config):
@@ -142,6 +146,17 @@ def test_prompt(manager):
     manager.c.spawncmd(":")
     manager.c.widget["prompt"].fake_keypress("slash")
     manager.c.widget["prompt"].fake_keypress("Tab")
+
+    script = Path(__file__).parent / "scripts" / "window.py"
+    manager.c.spawncmd(":", aliases={"w": script.as_posix()})
+    manager.c.widget["prompt"].fake_keypress("w")
+    manager.c.widget["prompt"].fake_keypress("Return")
+
+    @Retry(ignore_exceptions=(CommandError,))
+    def is_spawned():
+        return manager.c.window.info()
+
+    is_spawned()
 
 
 @gb_config
