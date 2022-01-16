@@ -230,7 +230,7 @@ class XWindow:
         return self.get_property("WM_STATE", xcffib.xproto.GetPropertyType.Any, unpack=int)
 
     def get_wm_class(self):
-        """Return an (instance, class) tuple if WM_CLASS exists, or None"""
+        """Return an (instance, class) tuple if WM_CLASS exists."""
         r = self.get_property("WM_CLASS", "STRING")
         if r:
             s = self._property_string(r)
@@ -591,8 +591,11 @@ class _Window:
             return
         hook.fire("client_name_updated", self)
 
-    def get_wm_class(self):
-        return self.window.get_wm_class()
+    def update_wm_class(self) -> None:
+        self._wm_class = self.window.get_wm_class()
+
+    def get_wm_class(self) -> Optional[List[str]]:
+        return self._wm_class
 
     def get_wm_type(self):
         return self.window.get_wm_type()
@@ -1060,7 +1063,7 @@ class _Window:
             attributes=attrs,
             properties=props,
             name=self.window.get_name(),
-            wm_class=self.window.get_wm_class(),
+            wm_class=self.get_wm_class(),
             wm_window_role=self.window.get_wm_window_role(),
             wm_type=self.window.get_wm_type(),
             wm_transient_for=self.window.get_wm_transient_for(),
@@ -1238,7 +1241,9 @@ class Window(_Window, base.Window):
 
     def __init__(self, window, qtile):
         _Window.__init__(self, window, qtile)
+        self._wm_class: Optional[List[str]] = None
         self.update_name()
+        self.update_wm_class()
         self.set_group()
 
         # add window to the save-set, so it gets mapped when qtile dies
@@ -1674,6 +1679,8 @@ class Window(_Window, base.Window):
         name = self.qtile.core.conn.atoms.get_name(e.atom)
         if name == "WM_TRANSIENT_FOR":
             pass
+        elif name == "WM_CLASS":
+            self.update_wm_class()
         elif name == "WM_HINTS":
             self.update_hints()
         elif name == "WM_NORMAL_HINTS":
