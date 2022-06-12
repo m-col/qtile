@@ -140,6 +140,19 @@ class Output(HasListeners):
                     )
 
                     for window in mapped:
+                        if window.shadow:
+                            offset_x, offset_y = window.shadow.offset
+                            box = Box(
+                                int((window.x + offset_x - self.x) * scale),
+                                int((window.y + offset_y - self.y) * scale),
+                                int(window.shadow.width * scale),
+                                int(window.shadow.height * scale),
+                            )
+                            matrix = Matrix.project_box(box, no_transform, 0, transform_matrix)
+                            renderer.render_texture_with_matrix(
+                                window.shadow.texture, matrix, window.opacity
+                            )
+
                         if isinstance(window, Internal):
                             box = Box(
                                 int((window.x - self.x) * scale),

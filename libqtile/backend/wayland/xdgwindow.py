@@ -35,7 +35,7 @@ from libqtile.backend import base
 from libqtile.backend.base import FloatStates
 from libqtile.backend.wayland.subsurface import SubSurface
 from libqtile.backend.wayland.window import Static, Window
-from libqtile.backend.wayland.wlrq import HasListeners
+from libqtile.backend.wayland.wlrq import HasListeners, make_shadow
 from libqtile.log_utils import logger
 
 if typing.TYPE_CHECKING:
@@ -267,13 +267,20 @@ class XdgWindow(Window[XdgSurface]):
 
         self.x = x
         self.y = y
-        self._width = int(width)
-        self._height = int(height)
-        self.surface.set_size(self._width, self._height)
+
+        if self._width != width or self._height != height:
+            self._width = width
+            self._height = height
+            self.surface.set_size(width, height)
+            self.shadow = None
+
         self.paint_borders(bordercolor, borderwidth)
 
         if above:
             self.cmd_bring_to_front()
+
+        if self.shadow is None:
+            self.shadow = make_shadow(self)
 
         prev_outputs = self._outputs.copy()
         self._find_outputs()
@@ -363,10 +370,18 @@ class XdgStatic(Static[XdgSurface]):
     ) -> None:
         self.x = x
         self.y = y
-        self._width = width
-        self._height = height
-        self.surface.set_size(self._width, self._height)
+
+        if self._width != width or self._height != height:
+            self._width = width
+            self._height = height
+            self.surface.set_size(width, height)
+            self.shadow = None
+
         self.paint_borders(bordercolor, borderwidth)
+
+        if self.shadow is None:
+            self.shadow = make_shadow(self)
+
         self._find_outputs()
         self.damage()
 

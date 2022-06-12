@@ -40,7 +40,7 @@ from libqtile import config, hook, utils
 from libqtile.backend import base
 from libqtile.backend.base import FloatStates
 from libqtile.backend.wayland.drawer import Drawer
-from libqtile.backend.wayland.wlrq import DRM_FORMAT_ARGB8888, HasListeners
+from libqtile.backend.wayland.wlrq import DRM_FORMAT_ARGB8888, HasListeners, make_shadow
 from libqtile.command.base import CommandError
 from libqtile.log_utils import logger
 
@@ -51,6 +51,7 @@ if typing.TYPE_CHECKING:
 
     from libqtile.backend.wayland.core import Core
     from libqtile.backend.wayland.output import Output
+    from libqtile.backend.wayland.wlrq import Shadow
     from libqtile.command.base import CommandObject, ItemT
     from libqtile.core.manager import Qtile
     from libqtile.group import _Group
@@ -69,6 +70,7 @@ def _rgb(color: ColorType) -> ffi.CData:
 
 class _Base:
     _wid: int
+    shadow: Shadow | None
 
     @property
     def wid(self) -> int:
@@ -109,6 +111,7 @@ class Window(typing.Generic[S], _Base, base.Window, HasListeners):
         self.x = 0
         self.y = 0
         self.bordercolor: list[ffi.CData] = [_rgb((0, 0, 0, 1))]
+        self.shadow = None
         self._opacity: float = 1.0
         self._outputs: set[Output] = set()
         self._wm_class: str | None = None
@@ -643,6 +646,7 @@ class Static(typing.Generic[S], _Base, base.Static, HasListeners):
         self._height = 0
         self.borderwidth: int = 0
         self.bordercolor: list[ffi.CData] = [_rgb((0, 0, 0, 1))]
+        self.shadow = None
         self.opacity: float = 1.0
         self._outputs: set[Output] = set()
         self._wm_class: str | None = None
@@ -791,6 +795,7 @@ class Internal(_Base, base.Internal):
         self._opacity: float = 1.0
         self._outputs: set[Output] = set(o for o in self.core.outputs if o.contains(self))
         self.texture: Texture = self._new_texture()
+        self.shadow = None
 
     def finalize(self) -> None:
         self.hide()

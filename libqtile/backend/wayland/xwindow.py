@@ -29,6 +29,7 @@ from libqtile import hook
 from libqtile.backend import base
 from libqtile.backend.base import FloatStates
 from libqtile.backend.wayland.window import Static, Window
+from libqtile.backend.wayland.wlrq import make_shadow
 from libqtile.log_utils import logger
 
 if typing.TYPE_CHECKING:
@@ -265,13 +266,20 @@ class XWindow(Window[xwayland.Surface]):
 
         self.x = x
         self.y = y
-        self._width = int(width)
-        self._height = int(height)
-        self.surface.configure(x, y, self._width, self._height)
+
+        if self._width != width or self._height != height:
+            self._width = width
+            self._height = height
+            self.surface.configure(x, y, width, height)
+            self.shadow = None
+
         self.paint_borders(bordercolor, borderwidth)
 
         if above:
             self.cmd_bring_to_front()
+
+        if self.shadow is None:
+            self.shadow = make_shadow(self)
 
         prev_outputs = self._outputs.copy()
         self._find_outputs()
@@ -356,9 +364,16 @@ class XStatic(Static[xwayland.Surface]):
     ) -> None:
         self.x = x
         self.y = y
-        self._width = width
-        self._height = height
-        self.surface.configure(x, y, self._width, self._height)
+
+        if self._width != width or self._height != height:
+            self._width = width
+            self._height = height
+            self.surface.configure(x, y, width, height)
+            self.shadow = None
+
+        if self.shadow is None:
+            self.shadow = make_shadow(self)
+
         self.paint_borders(bordercolor, borderwidth)
         self._find_outputs()
         self.damage()

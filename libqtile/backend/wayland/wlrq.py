@@ -21,17 +21,20 @@
 from __future__ import annotations
 
 import functools
+import math
 import operator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import cairocffi
+import numpy as np
 from pywayland.server import Listener
+from wlroots import ffi
 from wlroots.wlr_types import Texture
 from wlroots.wlr_types.keyboard import KeyboardModifier
 
 from libqtile.log_utils import logger
-from libqtile.utils import QtileError
+from libqtile.utils import QtileError, rgb
 
 if TYPE_CHECKING:
     from typing import Any, Callable
@@ -42,6 +45,7 @@ if TYPE_CHECKING:
 
     from libqtile.backend.wayland.core import Core
     from libqtile.backend.wayland.output import Output
+    from libqtile.backend.wayland.window import WindowType
     from libqtile.config import Screen
 
 
@@ -269,3 +273,92 @@ class CursorState:
     surface: Surface | None = None
     hotspot: tuple[int, int] = (0, 0)
     hidden: bool = False
+
+
+class Shadow(NamedTuple):
+    """A single window's shadow texture and dimensions."""
+
+    texture: Texture
+    width: int
+    height: int
+    offset: tuple[int, int]
+
+
+# Cache this?
+def get_shadow_config(
+    wl_shadows: dict,
+) -> tuple[int, tuple[float, float, float, float], tuple[int, int]]:
+    offset = wl_shadows.get("offset", (-5, -5))
+    assert len(offset) == 2
+    sigma = wl_shadows.get("radius", 5)
+    assert isinstance(sigma, int)
+    color = rgb(wl_shadows.get("color", "#00000088"))
+    return sigma, color, offset
+
+
+def make_kernel(bounds: int, sigma: float, opacity: float) -> np.ndarray:
+    """Create a gaussian kernel."""
+    ax = np.linspace(bounds, 0, bounds)
+    gauss = np.exp(-0.5 * np.square(ax) / np.square(sigma))
+    corner = np.multiply(gauss[:, None], gauss[None, :])
+    return (corner * opacity * 255).astype(np.uint32) << np.uint32(24)
+
+    # f = -0.5 * np.square(sigma)
+    # gauss = [math.exp(i * i / f) for i in range(bounds, -1, -1)]
+    # return array.array("L", (int(255 * i * j) for i in gauss for j in gauss))
+
+
+def make_shadow(window: WindowType) -> Shadow | None:
+    config_dict = window.qtile.config.wl_shadows
+    if config_dict is None:
+        return None
+
+    try:
+        sigma, (r, g, b, a), (offset_x, offset_y) = get_shadow_config(config_dict)
+    except Exception:
+        logger.exception("Shadows config is invalid.")
+        return None
+
+    # Get a gaussian kernel
+    bounds = math.ceil(sigma * 3)
+    if not bounds % 2:  # We want odd kernel dimensions so it peaks at 1 in the centre
+        bounds += 1
+
+    kernel = make_kernel(bounds, sigma, a)
+    bw = window.borderwidth
+    bw2 = bw * 2
+    width = window.width + bounds * 2 + bw2
+    height = window.height + bounds * 2 + bw2
+
+    # Draw corners
+    array = np.zeros((height, width), dtype=np.uint32)
+    array[bounds:-bounds, bounds:-bounds] = (
+        (np.uint32(r * 255) << np.uint32(16))
+        + (np.uint32(g * 255) << np.uint32(18))
+        + np.uint32(b * 255)
+    )
+    array[:bounds, :bounds] += kernel
+    array[-bounds:, :bounds] += np.flip(kernel, axis=0)
+    array[:bounds, -bounds:] += np.flip(kernel, axis=1)
+    array[-bounds:, -bounds:] += np.flip(kernel)
+    array[bounds:-bounds, bounds:-bounds] = kernel[-1, -1]
+
+    # Draw edges
+    top_bottom = np.repeat(kernel[:, -1:], window.width + bw2, axis=1)
+    left_right = np.repeat(kernel[-1:, :], window.height + bw2, axis=0)
+    array[:bounds, bounds:-bounds] += top_bottom
+    array[-bounds:, bounds:-bounds] += np.flipud(top_bottom)
+    array[bounds:-bounds, :bounds] += left_right
+    array[bounds:-bounds:, -bounds:] += np.fliplr(left_right)
+
+    # Convert to wlr_texture
+    texture = Texture.from_pixels(
+        window.core.renderer,
+        DRM_FORMAT_ARGB8888,
+        array.ctypes.strides[0],
+        width,
+        height,
+        ffi.cast("void*", array.ctypes.data),
+    )
+
+    return Shadow(texture, width, height, (offset_x - bounds - bw, offset_y - bounds - bw))

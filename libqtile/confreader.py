@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
     from libqtile.config import Group, Key, Mouse, Rule, Screen
     from libqtile.layout.base import Layout
+    from libqtile.utils import ColorType
 
 
 class ConfigError(Exception):
@@ -48,6 +49,7 @@ from typing import Any
 from typing_extensions import Literal
 from libqtile.config import Group, Key, Mouse, Rule, Screen
 from libqtile.layout.base import Layout
+from libqtile.utils import ColorType
 
 """
 
@@ -75,6 +77,7 @@ class Config:
     # Really we'd want to check this Any is libqtile.backend.wayland.ImportConfig, but
     # doing so forces the import, creating a hard dependency for wlroots.
     wl_input_rules: dict[str, Any] | None
+    wl_shadows: dict[str, int | tuple[int, int] | ColorType] | None
 
     def __init__(self, file_path=None, **settings):
         """Create a Config() object from settings

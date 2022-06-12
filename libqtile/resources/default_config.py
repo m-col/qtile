@@ -185,6 +185,7 @@ auto_minimize = True
 
 # When using the Wayland backend, this can be used to configure input devices.
 wl_input_rules = None
+wl_shadows = None
 
 # XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
 # string besides java UI toolkits; you can see several discussions on the

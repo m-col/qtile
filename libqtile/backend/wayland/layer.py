@@ -27,6 +27,7 @@ from wlroots.wlr_types.layer_shell_v1 import LayerShellV1Layer, LayerSurfaceV1
 
 from libqtile.backend.wayland.subsurface import SubSurface
 from libqtile.backend.wayland.window import Static
+from libqtile.backend.wayland.wlrq import make_shadow
 from libqtile.log_utils import logger
 
 if typing.TYPE_CHECKING:
@@ -151,9 +152,16 @@ class LayerStatic(Static[LayerSurfaceV1]):
     ) -> None:
         self.x = x
         self.y = y
-        self._width = int(width)
-        self._height = int(height)
-        self.surface.configure(self._width, self._height)
+
+        if self._width != width or self._height != height:
+            self._width = width
+            self._height = height
+            self.surface.configure(width, height)
+            self.shadow = None
+
+        if self.shadow is None:
+            self.shadow = make_shadow(self)
+
         self.damage()
 
     def cmd_bring_to_front(self) -> None:
