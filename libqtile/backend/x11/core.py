@@ -622,7 +622,7 @@ class Core(base.Core):
         )
         self.flush()
 
-    def fake_KeyPress(self, event) -> None:
+    def fake_keyPress(self, event) -> None:
         xtest = self.conn.conn(xcffib.xtest.key)
         # First release the key as it is possibly already pressed
         self.fake_xtest(xtest, event, 3)
@@ -650,7 +650,7 @@ class Core(base.Core):
             # We need to ungrab the key as otherwise we get an event loop
             self.ungrab_key(key)
             # Modifier is pressed, just repeat the event with xtest
-            self.fake_KeyPress(event)
+            self.fake_keyPress(event)
             # Grab the key again
             self.grab_key(key)
 
