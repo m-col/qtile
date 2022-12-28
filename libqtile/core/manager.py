@@ -54,7 +54,7 @@ from libqtile.utils import get_cache_dir, lget, send_notification, subscribe_for
 from libqtile.widget.base import _Widget
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from typing import Any, Callable, Optional, Tuple, Union
 
     from typing_extensions import Literal
 
