@@ -54,7 +54,7 @@ from libqtile.utils import get_cache_dir, lget, send_notification, subscribe_for
 from libqtile.widget.base import _Widget
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional, Tuple, Union
+    from typing import Any, Callable
 
     from typing_extensions import Literal
 
@@ -405,9 +405,7 @@ class Qtile(CommandObject):
     def paint_screen(self, screen: Screen, image_path: str, mode: str | None = None) -> None:
         self.core.painter.paint(screen, image_path, mode)
 
-    def process_key_event(
-        self, keysym: int, mask: int
-    ) -> Tuple[Optional[Union[Key, KeyChord]], bool]:
+    def process_key_event(self, keysym: int, mask: int) -> tuple[Key | KeyChord | None, bool]:
         key = self.keys_map.get((keysym, mask), None)
         if key is None:
             logger.debug("Ignoring unknown keysym: %s, mask: %s", keysym, mask)
