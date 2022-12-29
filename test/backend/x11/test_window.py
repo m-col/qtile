@@ -488,19 +488,19 @@ def test_cursor_warp(xmanager, conn):
 def test_click_focus_screen(xmanager):
     screen1 = (WIDTH // 2, HEIGHT // 2)
     screen2 = (WIDTH + SECOND_WIDTH // 2, SECOND_HEIGHT // 2)
-    xmanager.c.eval(f"self.core.warp_pointer{screen1}")
+    xmanager.c.warp_pointer(*screen1)
     assert xmanager.c.screen.info()["index"] == 0
 
     # Warping alone shouldn't change the current screen
-    xmanager.c.eval(f"self.core.warp_pointer{screen2}")
+    xmanager.c.warp_pointer(*screen2)
     assert xmanager.c.screen.info()["index"] == 0
     # Clicking should
-    xmanager.backend.fake_click(*screen2)
+    xmanager.c.simulate_click()
     assert xmanager.c.screen.info()["index"] == 1
 
-    xmanager.c.eval(f"self.core.warp_pointer{screen1}")
+    xmanager.c.warp_pointer(*screen1)
     assert xmanager.c.screen.info()["index"] == 1
-    xmanager.backend.fake_click(*screen1)
+    xmanager.c.simulate_click()
     assert xmanager.c.screen.info()["index"] == 0
 
 

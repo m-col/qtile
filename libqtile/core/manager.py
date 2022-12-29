@@ -1158,6 +1158,9 @@ class Qtile(CommandObject):
     def simulate_keypress(self, modifiers: list[str], key: str) -> None:
         """Simulates a keypress on the focused window.
 
+        This triggers internal bindings only; for full simulation see external tools
+        such as xdotool.
+
         Parameters
         ==========
         modifiers :
@@ -1174,6 +1177,24 @@ class Qtile(CommandObject):
             self.core.simulate_keypress(modifiers, key)
         except utils.QtileError as e:
             raise CommandError(str(e))
+
+    @expose_command()
+    def simulate_click(self, button: int = 1, x: int | None = None, y: int | None = None) -> None:
+        """Simulates a button click.
+
+        Unlike simulate_keypress, this is a fully simulated event and can trigger both
+        bindings and events on clients.
+
+        Parameters
+        ==========
+        button :
+            The button number used (Optional, defaults to button 1).
+        x :
+            The x coordinate to send the event (Optional, defaults to pointer position).
+        y :
+            The y coordinate to send the event (Optional, defaults to pointer position).
+        """
+        self.core.simulate_click(button=button, x=x, y=y)
 
     @expose_command()
     def validate_config(self) -> None:
@@ -1681,6 +1702,11 @@ class Qtile(CommandObject):
                 logger.warning("Not found bar for hide/show.")
         else:
             logger.warning("Invalid position value:%s", position)
+
+    @expose_command()
+    def warp_pointer(self, x: float, y: float) -> None:
+        """Warp the pointer using global coordinates."""
+        self.core.warp_pointer(x, y)
 
     @expose_command()
     def get_state(self) -> str:

@@ -1238,6 +1238,15 @@ class Core(base.Core, wlrq.HasListeners):
         if self.focused_internal:
             self.focused_internal.process_key_press(keysym)
 
+    def simulate_click(self, button: int = 1, x: int | None = None, y: int | None = None) -> None:
+        """Simulate a button click."""
+        if x is None:
+            x = self.cursor.x
+        if y is None:
+            y = self.cursor.y
+        self.warp_pointer(x, y)
+        self._focus_by_click()
+
     @expose_command()
     def set_keymap(
         self,

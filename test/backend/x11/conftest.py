@@ -8,8 +8,8 @@ import xcffib.testing
 import xcffib.xproto
 import xcffib.xtest
 
+from libqtile.backend.x11 import xcbq
 from libqtile.backend.x11.core import Core
-from libqtile.backend.x11.xcbq import Connection
 from test.helpers import (
     HEIGHT,
     SECOND_HEIGHT,
@@ -172,7 +172,7 @@ def xmanager(request, xephyr):
 
 @pytest.fixture(scope="function")
 def conn(xmanager):
-    conn = Connection(xmanager.display)
+    conn = xcbq.Connection(xmanager.display)
     yield conn
     conn.finalize()
 
@@ -186,21 +186,9 @@ class XBackend(Backend):
         self.core = Core
         self.manager = None
 
-    def fake_click(self, x, y):
-        """Click at the specified coordinates"""
-        conn = Connection(self.env["DISPLAY"])
-        root = conn.default_screen.root.wid
-        xtest = conn.conn(xcffib.xtest.key)
-        xtest.FakeInput(6, 0, xcffib.xproto.Time.CurrentTime, root, x, y, 0)
-        xtest.FakeInput(4, 1, xcffib.xproto.Time.CurrentTime, root, 0, 0, 0)
-        xtest.FakeInput(5, 1, xcffib.xproto.Time.CurrentTime, root, 0, 0, 0)
-        conn.conn.flush()
-        self.manager.c.sync()
-        conn.finalize()
-
     def get_all_windows(self):
         """Get a list of all windows in ascending order of Z position"""
-        conn = Connection(self.env["DISPLAY"])
+        conn = xcbq.Connection(self.env["DISPLAY"])
         root = conn.default_screen.root.wid
         q = conn.conn.core.QueryTree(root).reply()
         wins = list(q.children)

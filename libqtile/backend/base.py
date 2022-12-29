@@ -92,8 +92,8 @@ class Core(CommandObject, metaclass=ABCMeta):
         Respond to config loading. `initial` will be `True` if Qtile just started.
         """
 
-    def warp_pointer(self, x: int, y: int) -> None:
-        """Warp the pointer to the given coordinates relative."""
+    def warp_pointer(self, x: float, y: float) -> None:
+        """Warp the pointer to the given coordinates."""
 
     def update_client_list(self, windows_map: dict[int, WindowType]) -> None:
         """Update the list of windows being managed"""
@@ -115,6 +115,9 @@ class Core(CommandObject, metaclass=ABCMeta):
 
     def simulate_keypress(self, modifiers: list[str], key: str) -> None:
         """Simulate a keypress with given modifiers"""
+
+    def simulate_click(self, button: int = 1, x: int | None = None, y: int | None = None) -> None:
+        """Simulate a button click."""
 
     def keysym_from_name(self, name: str) -> int:
         """Get the keysym for a key from its name"""
