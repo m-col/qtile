@@ -17,6 +17,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import pytest
+
+import libqtile
 from libqtile import config
 from libqtile.backend.x11 import xcbq
 from libqtile.backend.x11.core import Core
@@ -24,26 +27,34 @@ from libqtile.confreader import Config
 from libqtile.lazy import lazy
 
 
-# Function that does nothing
-def swallow_nop(qtile):
-    pass
+@lazy.swallow
+def increment_swallow(qtile):
+    # Every time the command is called, this counter is incremented
+    qtile.test_data += 1
 
 
 # Config with multiple keys and swallow parameters
 class SwallowConfig(Config):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        @libqtile.hook.subscribe.startup
+        def _():
+            libqtile.qtile.test_data = 0
+
     keys = [
         config.Key(
             ["control"],
             "k",
-            lazy.function(swallow_nop),
+            increment_swallow,
         ),
-        config.Key(["control"], "j", lazy.function(swallow_nop), swallow=False),
-        config.Key(["control"], "i", lazy.function(swallow_nop).when(layout="idonotexist")),
+        config.Key(["control"], "j", increment_swallow, swallow=False),
+        config.Key(["control"], "i", increment_swallow.when(layout="idonotexist")),
         config.Key(
             ["control"],
             "o",
-            lazy.function(swallow_nop).when(layout="idonotexist"),
-            lazy.function(swallow_nop),
+            increment_swallow.when(layout="idonotexist"),
+            increment_swallow,
         ),
     ]
 
@@ -51,15 +62,15 @@ class SwallowConfig(Config):
         config.Click(
             [],
             "Button1",
-            lazy.function(swallow_nop),
+            increment_swallow,
         ),
-        config.Click(["control"], "Button3", lazy.function(swallow_nop), swallow=False),
-        config.Click(["mod4"], "Button3", lazy.function(swallow_nop).when(layout="idonotexist")),
+        config.Click(["control"], "Button3", increment_swallow, swallow=False),
+        config.Click(["mod4"], "Button3", increment_swallow.when(layout="idonotexist")),
         config.Click(
             [],
             "Button3",
-            lazy.function(swallow_nop).when(layout="idonotexist"),
-            lazy.function(swallow_nop),
+            increment_swallow.when(layout="idonotexist"),
+            increment_swallow,
         ),
     ]
 
@@ -88,10 +99,8 @@ def send_process_button_click(manager, mouse):
     return output[1] == "True"
 
 
-def test_swallow(manager_nospawn):
-    manager = manager_nospawn
-    manager.start(SwallowConfig)
-
+@pytest.mark.parametrize("manager", [SwallowConfig], indirect=True)
+def test_swallow(manager):
     # The first key needs to be True as swallowing is not set here
     # We expect the second key to not be handled, as swallow is set to False
     # The third needs to not be swallowed as the layout .when(...) check does not succeed
@@ -109,13 +118,13 @@ def test_swallow(manager_nospawn):
     not_used_key = config.Key(
         ["control"],
         "h",
-        lazy.function(swallow_nop),
+        increment_swallow,
     )
 
     not_used_mouse = config.Click(
         [],
         "Button2",
-        lazy.function(swallow_nop),
+        increment_swallow,
     )
 
     # This key is not defined in the config so it should not be handled
